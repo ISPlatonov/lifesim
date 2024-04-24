@@ -19,12 +19,11 @@ enum class FigureType
 class Figure
 {
 public:
-    Figure(FigureType type, sf::Vector2f position);
-    //virtual ~Figure() = default;
+    Figure(FigureType type, sf::Vector2f position, sf::Color color = getRandomColor());
     ~Figure() = default;
 
-    //virtual sf::VertexArray getDrawable() const = 0;
     inline std::vector<sf::Vertex> getVertices() const { return vertices; }
+    void shift(const sf::Vector2f& shift_vector);
 
 protected:
     static inline const sf::Color getRandomColor()
@@ -35,7 +34,8 @@ protected:
     sf::Vector2f position;
     FigureType type;
     std::vector<sf::Vertex> vertices;
-    static inline const float FIGURE_SIZE = 100;
+    sf::Color color;
+    static inline const float FIGURE_SIZE = 20;
     static inline const double PRECISION = 0.1;
     static inline const double PI = 3.14159265358979323846;
 };

@@ -1,8 +1,9 @@
 #include "WindowController.hpp"
 #include "Figures.hpp"
+#include "Constants.hpp"
 
 
-sf::RenderWindow WindowController::window(sf::VideoMode(WindowController::WIDTH, WindowController::HEIGHT), WindowController::TITLE);
+sf::RenderWindow WindowController::window(sf::VideoMode(Constants::WIDTH, Constants::HEIGHT), WindowController::TITLE);
 sf::VertexBuffer WindowController::vertex_buffer(sf::PrimitiveType::Triangles, sf::VertexBuffer::Static);
 
 
@@ -11,6 +12,7 @@ int WindowController::Run()
     while (window.isOpen())
     {
         event_handler(window);
+        make_turn();
 
         window.clear(WindowController::BACKGROUND_COLOR);
 
@@ -19,6 +21,26 @@ int WindowController::Run()
         window.display();
     }
     return 0;
+}
+
+
+void WindowController::make_turn()
+{
+    if (is_playing)
+    {
+        figures.clear();
+        brain.make_turn(figures);
+        vertices.clear();
+        for (auto& figure : figures)
+        {
+            for (auto& vertex : figure.getVertices())
+            {
+                vertices.push_back(vertex);
+            }
+        }
+        vertex_buffer.create(vertices.size());
+        vertex_buffer.update(vertices.data());
+    }
 }
 
 
@@ -32,16 +54,59 @@ void WindowController::event_handler(sf::RenderWindow &window)
         case sf::Event::Closed:
             window.close();
             break;
+        case sf::Event::MouseMoved:
+            if (is_dragging)
+            {
+                figures.back().shift(sf::Vector2f(event.mouseMove.x, event.mouseMove.y) - staged_mouse_position);
+                staged_mouse_position = sf::Vector2f(event.mouseMove.x, event.mouseMove.y);
+                vertices.clear();
+                for (auto& figure : figures)
+                {
+                    for (auto& vertex : figure.getVertices())
+                    {
+                        vertices.push_back(vertex);
+                    }
+                }
+                vertex_buffer.create(vertices.size());
+                vertex_buffer.update(vertices.data());
+            }
+            break;
         case sf::Event::MouseButtonPressed:
             switch (event.mouseButton.button)
             {
             case sf::Mouse::Left:
                 addDrawable();
                 break;
+            case sf::Mouse::Right:
+                if (!is_dragging)
+                {
+                    is_dragging = true;
+                    staged_mouse_position = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                }
+                break;
             default:
                 break;
             }
             break;
+        case sf::Event::MouseButtonReleased:
+            switch (event.mouseButton.button)
+            {
+                case sf::Mouse::Right:
+                    is_dragging = false;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case sf::Event::KeyPressed:
+            switch (event.key.code)
+            {
+                case sf::Keyboard::Space:
+                    is_playing = !is_playing;
+                    break;
+                default:
+                    break;
+            }
         case sf::Event::KeyReleased:
             switch (event.key.code)
             {
@@ -92,9 +157,13 @@ void WindowController::event_handler(sf::RenderWindow &window)
                     vertex_buffer.create(vertices.size());
                     vertex_buffer.update(vertices.data());
                     break;
+                case sf::Keyboard::Space:
+                    //
+                    break;
                 default:
                     break;
             }
+            figures.clear();
             vertices.clear();
             window.setTitle(WindowController::TITLE);
             break;
