@@ -31,7 +31,7 @@ Figure::Figure(FigureType type, sf::Vector2f position) : type(type), position(po
             vertices.push_back(sf::Vertex(position + sf::Vector2f(Figure::FIGURE_SIZE * cos(i), Figure::FIGURE_SIZE * sin(i)), vertices.back().color));
             i += PRECISION;
             vertices.push_back(sf::Vertex(position + sf::Vector2f(Figure::FIGURE_SIZE * cos(i), Figure::FIGURE_SIZE * sin(i)), vertices.back().color));
-            for (; i <= 2 * M_PI + PRECISION;)
+            for (; i <= 2 * PI + PRECISION;)
             {
                 vertices.push_back(sf::Vertex(position, vertices.back().color));
                 vertices.push_back(sf::Vertex(position + sf::Vector2f(Figure::FIGURE_SIZE * cos(i), Figure::FIGURE_SIZE * sin(i)), vertices.back().color));
