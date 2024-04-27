@@ -3,21 +3,22 @@
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
+#include "Object.hpp"
 
 
-class Food
+class Food : public Object
 {
 public:
-    Food(sf::Vector2f position) : position(position) {}
+    Food(const sf::Vector2f& position) : Object(position, ObjectType::Food, sf::Color::Green) {}
+    Food (const Food& other) : Object(other), health_bonus(other.health_bonus) {}
     ~Food() = default;
 
-    inline sf::Vector2f getPosition() const { return position; }
-    inline sf::Color getColor() const { return color; }
-    inline size_t getHealthBonus() const { return HEALTH_BONUS; }
-    inline bool operator==(const Food& other) const { return position == other.position; }// && HEALTH_BONUS == HEALTH_BONUS; }
+    inline int getHealthBonus() const { return health_bonus; }
+    inline int getSatietyBonus() const { return satiety_bonus; }
+    inline bool operator==(const Food& other) const { return position == other.position && health_bonus == other.health_bonus; }
+    inline Food& operator=(const Food& other) { position = other.position; health_bonus = other.health_bonus; return *this; }
 
 private:
-    sf::Vector2f position;
-    sf::Color color = sf::Color::Green;
-    static inline const size_t HEALTH_BONUS = 50;
+    int health_bonus = 10;
+    int satiety_bonus = 50;
 };

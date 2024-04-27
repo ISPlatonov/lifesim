@@ -107,6 +107,7 @@ void WindowController::event_handler(sf::RenderWindow &window)
                 default:
                     break;
             }
+            break;
         case sf::Event::KeyReleased:
             switch (event.key.code)
             {

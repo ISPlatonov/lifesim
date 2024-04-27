@@ -7,6 +7,7 @@
 #include "Constants.hpp"
 #include "Player.hpp"
 #include "Food.hpp"
+#include "Object.hpp"
 #include <vector>
 
 

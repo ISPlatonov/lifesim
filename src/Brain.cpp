@@ -1,5 +1,6 @@
 #include "Brain.hpp"
-#include <cmath>
+#include "Math.hpp"
+#include "Event.hpp"
 
 
 Brain::Brain()
@@ -17,22 +18,48 @@ Brain::Brain()
 
 void Brain::make_turn(std::vector<Figure>& figures)
 {
+    std::vector<Player> new_players;
     for (auto& player : players)
     {
-        std::vector<Food> food_positions, eaten_foods;
+        std::vector<Food> food_around;
+        std::vector<Player> players_around;
         for (auto& food : foods)
         {
-            if (sqrt(pow(player.getPosition().x - food.getPosition().x, 2) + pow(player.getPosition().y - food.getPosition().y, 2)) <= player.VIEW_RADIUS)
+            if (Math::distance(player.getPosition(), food.getPosition()) <= player.getViewRadius())
             {
-                food_positions.push_back(food);
+                food_around.push_back(food);
             }
         }
-        eaten_foods = player.make_turn(food_positions);
-        for (auto& eaten_food : eaten_foods)
+        for (auto& other_player : players)
+		{
+			if (&player != &other_player && Math::distance(player.getPosition(), other_player.getPosition()) <= player.getViewRadius())
+			{
+				players_around.push_back(other_player);
+			}
+		}
+        Event::Event event = player.make_turn(food_around, players_around);
+        switch (event.getType())
         {
-            player.eat(eaten_food);
-            foods.erase(std::find(foods.begin(), foods.end(), eaten_food));
-            foods.push_back(Food({static_cast<float>(rand() % Constants::WIDTH), static_cast<float>(rand() % Constants::HEIGHT)}));
+        case Event::Type::None:
+            break;
+        case Event::Type::Eat:
+            {
+                auto object_ptr = event.getObjectPtr();
+                auto weak_ptr = object_ptr.get();
+                Food* food = dynamic_cast<Food*>(weak_ptr);
+                foods.erase(std::find(foods.begin(), foods.end(), *food));
+            }
+            break;
+        case Event::Type::Sex:
+        {
+			auto object_ptr = event.getObjectPtr();
+			auto weak_ptr = object_ptr.get();
+			Player* other_player = dynamic_cast<Player*>(weak_ptr);
+			new_players.push_back(Player(player, *other_player));
+			break;
+        }
+        default:
+            break;
         }
     }
     for (auto it = players.begin(); it != players.end();)
@@ -46,9 +73,16 @@ void Brain::make_turn(std::vector<Figure>& figures)
             ++it;
         }
     }
+
+    for (size_t i = 0; i < 1; ++i)
+	{
+		foods.push_back(Food({static_cast<float>(rand() % Constants::WIDTH), static_cast<float>(rand() % Constants::HEIGHT)}));
+	}
+
+    players.insert(players.end(), new_players.begin(), new_players.end());
     for (auto& player : players)
     {
-        figures.push_back(Figure(FigureType::Triangle, player.getPosition(), player.getColor()));
+        figures.push_back(Figure(player.getSex() == PlayerSex::Male ? FigureType::Male : FigureType::Female, player.getPosition(), player.getColor()));
     }
     for (auto& food : foods)
     {

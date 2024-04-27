@@ -12,7 +12,9 @@ enum class FigureType
     Line,
     Triangle,
     Rectangle,
-    Circle
+    Circle,
+    Male,
+    Female
 };
 
 
@@ -35,7 +37,4 @@ protected:
     FigureType type;
     std::vector<sf::Vertex> vertices;
     sf::Color color;
-    static inline const float FIGURE_SIZE = 20;
-    static inline const double PRECISION = 0.1;
-    static inline const double PI = 3.14159265358979323846;
 };
