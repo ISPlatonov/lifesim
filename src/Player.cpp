@@ -1,8 +1,9 @@
 #include "Player.hpp"
 #include "Math.hpp"
+#include "Constants.hpp"
 
 
-Player::Player(sf::Vector2f position) : Object(position, ObjectType::Player, sf::Color(rand() % 256, rand() % 256, rand() % 256))
+Player::Player(sf::Vector2f position) : Object(position, ObjectType::Player, sf::Color(rand() % 256, rand() % 256, rand() % 256)), genome(15, 2)
 {
     speed = rand() % 10 + 1;
     view_radius = rand() % 1000 + 500;
@@ -10,61 +11,46 @@ Player::Player(sf::Vector2f position) : Object(position, ObjectType::Player, sf:
 }
 
 
-Player::Player(const Player& first_parent, const Player& second_parent) : Object(first_parent.getPosition(), ObjectType::Player, sf::Color(first_parent.getColor().r / 2 + second_parent.getColor().r / 2, first_parent.getColor().g / 2 + second_parent.getColor().g / 2, first_parent.getColor().b / 2 + second_parent.getColor().b / 2))
+Player::Player(const Player& first_parent, const Player& second_parent) : Object(first_parent.getPosition(), ObjectType::Player, sf::Color(first_parent.getColor().r / 2 + second_parent.getColor().r / 2, first_parent.getColor().g / 2 + second_parent.getColor().g / 2, first_parent.getColor().b / 2 + second_parent.getColor().b / 2)), genome(15, 2)
 {
 	speed = (first_parent.getSpeed() / 2.f + second_parent.getSpeed() / 2.f) + static_cast<float>(rand() % 3 - 1);
 	view_radius = (first_parent.getViewRadius() / 2.f + second_parent.getViewRadius() / 2.f) + static_cast<float>(rand() % 3 - 1);
     sex = rand() % 2 == 0 ? PlayerSex::Male : PlayerSex::Female;
     health = (first_parent.getHealth() / 2 + second_parent.getHealth() / 2);
     satiety = (first_parent.getSatiety() / 2 + second_parent.getSatiety() / 2);
+    genome = Genome(first_parent.getGenome(), second_parent.getGenome());
 }
 
 
-Event::Event Player::make_turn(std::vector<Food> foods_around, std::vector<Player> players_around)
+Event::Event Player::make_turn(std::vector<std::shared_ptr<Food>> food_in_front, std::shared_ptr<Player> player_in_front)
 {
     satiety <= 0 ? health -= 1.f : satiety -= .1f;
     Event::Event event(Event::Type::None, std::nullptr_t());
-    // let's move to the nearest food if we are hungry
-    if (satiety < 250)
+    // @todo: Implement the logic of the player's behavior
+    std::vector<float> input(food_in_front.size());
+    for (size_t i = 0; i < food_in_front.size(); ++i)
     {
-        if (foods_around.empty())
-        {
-            // do nothing?
-            return event;
-        }
-        auto nearest_food_iter = search_for_nearest(foods_around);
-        if (nearest_food_iter != foods_around.end())
-        {
-            auto shift_vector = nearest_food_iter->getPosition() - position;
-            shift(shift_vector);
-            if (Math::length(shift_vector) < speed)
-            {
-                eat(*nearest_food_iter);
-                event = Event::Event(Event::Type::Eat, std::make_shared<Food>(*nearest_food_iter));
-            }
-        }
+        input[i] = food_in_front[i] ? 1.f : 0.f;
+        // std::cout << input[i] << ' ';
     }
-    else
-    {
-        if (players_around.empty())
-        {
-            // do nothing?
-            return event;
-        }
-        // let's move to person with of the opposite sex
-        auto nearest_player_iter = search_for_nearest(players_around, true);
-        if (nearest_player_iter != players_around.end() && nearest_player_iter->getSex() != sex)
-        {
-            auto shift_vector = nearest_player_iter->getPosition() - position;
-            shift(shift_vector);
-            if (Math::length(shift_vector) < speed)
-            {
-                health /= 2;
-                nearest_player_iter->health /= 2;
-                event = Event::Event(Event::Type::Sex, std::make_shared<Player>(*nearest_player_iter));
-                satiety = 0;
-            }
-        }
+    // std::cout << std::endl;
+    auto action = genome.getOutput(input);
+    shift(action[0] * 2 * Constants::Figures::PI, action[1]);
+    // check for food to eat
+    bool eated = false;
+    // for (auto& food : food_in_front)
+    // {
+    //     if (food && Math::distance(position, food->getPosition()) < Constants::Figures::FIGURE_SIZE * 2)
+    //     {
+    //         std::cout << "Player " << this << " eats food " << food.get() << std::endl;
+    //         eat(*food);
+    //         event = Event::Event(Event::Type::Eat, food);
+    //         eated = true;
+    //         break;
+    //     }
+    // }
+    if (getSatiety() < 0) {
+        genome.mutate();
     }
     return event;
 }
@@ -107,8 +93,22 @@ void Player::eat(const Food& food)
 }
 
 
-void Player::shift(const sf::Vector2f& shift_vector)
+Player Player::reproduce(Player& other)
 {
-    float length = Math::length(shift_vector);
-    length > speed ? position += shift_vector / length * speed : position += shift_vector;
+    auto child = Player(*this, other);
+    satiety -= 100.f;
+    other.satiety -= 100.f;
+    return child;
+}
+
+
+
+void Player::shift(float angle, float speed_share)
+{
+    std::abs(speed_share) > 1 ? speed_share /= std::abs(speed_share) : speed_share;
+    this->angle += angle;
+    this->angle = std::fmod(this->angle, 2.f * Constants::Figures::PI);
+    position.x += speed_share * speed * cos(this->angle);
+    position.y += speed_share * speed * sin(this->angle);
+    satiety -= speed_share * speed * speed_share * speed * .01f;
 }
