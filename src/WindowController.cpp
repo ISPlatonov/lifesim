@@ -1,6 +1,8 @@
 #include "WindowController.hpp"
 #include "Figures.hpp"
 #include "Constants.hpp"
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
 
 
 sf::RenderWindow WindowController::window(sf::VideoMode(Constants::WIDTH, Constants::HEIGHT), WindowController::TITLE);
@@ -9,6 +11,7 @@ sf::VertexBuffer WindowController::vertex_buffer(sf::PrimitiveType::Triangles, s
 
 int WindowController::Run()
 {
+    boost::asio::io_service::work work(brain.get_io_service());
     while (window.isOpen())
     {
         event_handler(window);

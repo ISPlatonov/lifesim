@@ -35,13 +35,13 @@ public:
     inline bool operator==(const Player& other) const { return position == other.position && health == other.health && color == other.color && view_radius == other.view_radius && sex == other.sex; }
     void eat(const Food& food);
     Player reproduce(Player& other);
+    void shift(float angle, float speed_share);
 
 protected:
     std::vector<Food>::iterator search_for_nearest(std::vector<Food>& foods_around);
     std::vector<Player>::iterator search_for_nearest(std::vector<Player>& players_around, bool opposite_sex = false);
 
 private:
-    void shift(float angle, float speed_share);
 
     Genome genome;
     float health = 20.f;

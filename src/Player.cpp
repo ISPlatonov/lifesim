@@ -24,8 +24,8 @@ Player::Player(const Player& first_parent, const Player& second_parent) : Object
 
 Event::Event Player::make_turn(std::vector<std::shared_ptr<Food>> food_in_front, std::shared_ptr<Player> player_in_front)
 {
-    satiety <= 0 ? health -= 1.f : satiety -= .1f;
-    Event::Event event(Event::Type::None, std::nullptr_t());
+    satiety <= 0 ? health -= .1f : satiety -= .1f;
+    Event::Event event(Event::Type::Move, std::nullptr_t());
     // @todo: Implement the logic of the player's behavior
     std::vector<float> input(food_in_front.size());
     for (size_t i = 0; i < food_in_front.size(); ++i)
@@ -35,7 +35,9 @@ Event::Event Player::make_turn(std::vector<std::shared_ptr<Food>> food_in_front,
     }
     // std::cout << std::endl;
     auto action = genome.getOutput(input);
-    shift(action[0] * 2 * Constants::Figures::PI, action[1]);
+    //shift(action[0] * 2 * Constants::Figures::PI, action[1]);
+    sf::Vector2f shift(action[0] * 2 * Constants::Figures::PI, action[1]);
+    event = Event::Event(Event::Type::Move, std::make_shared<Object>(shift, ObjectType::None, sf::Color()));
     // check for food to eat
     bool eated = false;
     // for (auto& food : food_in_front)
@@ -110,5 +112,5 @@ void Player::shift(float angle, float speed_share)
     this->angle = std::fmod(this->angle, 2.f * Constants::Figures::PI);
     position.x += speed_share * speed * cos(this->angle);
     position.y += speed_share * speed * sin(this->angle);
-    satiety -= speed_share * speed * speed_share * speed * .01f;
+    satiety -= speed_share * speed * speed_share * speed * .001f;
 }

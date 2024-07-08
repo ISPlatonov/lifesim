@@ -1,12 +1,12 @@
 #include "Genome.hpp"
 
 
-Genome::Genome(size_t input_nodes, size_t output_nodes) {
-    this->input_nodes = std::vector<Node<NodeType::Input>>(input_nodes);
-    this->output_nodes = std::vector<Node<NodeType::Output>>(output_nodes);
-    for (size_t i = 0; i < input_nodes; ++i) {
+Genome::Genome(size_t input_nodes_size, size_t output_nodes_size) {
+    this->input_nodes = std::vector<Node<NodeType::Input>>(input_nodes_size, Node<NodeType::Input>());
+    this->output_nodes = std::vector<Node<NodeType::Output>>(output_nodes_size, Node<NodeType::Output>());
+    for (size_t i = 0; i < input_nodes_size; ++i) {
         float bias = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * .1f;
-        for (size_t j = 0; j < output_nodes; ++j) {
+        for (size_t j = 0; j < output_nodes_size; ++j) {
             float value = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
             genes.push_back(Gene(std::make_pair(NodeType::Input, i), std::make_pair(NodeType::Input, j), value, bias));
         }
@@ -16,15 +16,26 @@ Genome::Genome(size_t input_nodes, size_t output_nodes) {
 
 Genome::Genome(const Genome& first, const Genome& second) {
     // the longer genome is the main one
-    const auto& main_genome = first.getGenes().size() > second.getGenes().size() ? first : second;
-    const auto& secondary_genome = first.getGenes().size() > second.getGenes().size() ? second : first;
-    genes = main_genome.getGenes();
-    input_nodes = main_genome.getInputNodes();
-    output_nodes = main_genome.getOutputNodes();
-    for (size_t i = 0; i < secondary_genome.getGenes().size(); ++i) {
-        if (rand() % 2 == 0) {
-            genes[i] = secondary_genome.getGenes()[i];
-        }
+    // const auto& main_genome = first.getGenes().size() > second.getGenes().size() ? first : second;
+    // const auto& secondary_genome = first.getGenes().size() > second.getGenes().size() ? second : first;
+    // genes = main_genome.getGenes();
+    // input_nodes = main_genome.getInputNodes();
+    // output_nodes = main_genome.getOutputNodes();
+    // for (size_t i = 0; i < secondary_genome.getGenes().size(); ++i) {
+    //     if (rand() % 2 == 0) {
+    //         genes[i] = secondary_genome.getGenes()[i];
+    //     }
+    // }
+    if (rand() % 2 == 0) {
+        genes = first.getGenes();
+        input_nodes = first.getInputNodes();
+        hidden_nodes = first.getHiddenNodes();
+        output_nodes = first.getOutputNodes();
+    } else {
+        genes = second.getGenes();
+        input_nodes = second.getInputNodes();
+        hidden_nodes = second.getHiddenNodes();
+        output_nodes = second.getOutputNodes();
     }
 }
 
@@ -36,7 +47,7 @@ void Genome::mutate() {
     } else if (rand_num % 10 == 0) {
         create_new_gene();
     } else {
-        size_t gene_index = rand() % genes.size();
+        size_t gene_index = rand_num % genes.size();
         genes[gene_index].mutate();
     }
 }

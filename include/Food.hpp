@@ -20,5 +20,5 @@ public:
 
 private:
     int health_bonus = 10;
-    int satiety_bonus = 50;
+    int satiety_bonus = 200;
 };

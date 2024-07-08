@@ -13,97 +13,79 @@ Brain::Brain()
     {
         foods.push_back(Food({static_cast<float>(rand() % Constants::WIDTH), static_cast<float>(rand() % Constants::HEIGHT)}));
     }
+    for (size_t i = 0; i < boost::thread::hardware_concurrency(); ++i)
+    {
+        threadpool.create_thread(boost::bind(&boost::asio::io_service::run, boost::ref(io_service)));
+    }
 }
 
 
 void Brain::make_turn(std::vector<Figure>& figures)
 {
     std::vector<Player> new_players;
+    std::vector<sf::Vector2f> shifts(players.size());
+    // handle players in thread pool
+    size_t i = 0;
     for (auto& player : players)
     {
-        std::vector<std::shared_ptr<Food>> food_in_front(15);
-        std::shared_ptr<Player> player_in_front;
-        // make 5 rays in front of the player
-        size_t rays_count = 15;
-        for (float angle = -Constants::Figures::PI / 4 + player.getAngle(); angle <= Constants::Figures::PI / 4 + player.getAngle(); angle += Constants::Figures::PI / 28)
-        {
-            --rays_count;
-            for (auto& food : foods)
+        io_service.post([&player, &shifts, this, i](){
+            std::vector<std::shared_ptr<Food>> food_in_front(15);
+            std::shared_ptr<Player> player_in_front;
+            // make 15 rays in front of the player
+            size_t rays_count = 15;
+            for (float angle = -Constants::Figures::PI / 4 + player.getAngle(); angle <= Constants::Figures::PI / 4 + player.getAngle(); angle += Constants::Figures::PI / 28)
             {
-                if (Math::in_front(player.getPosition(), angle, food.getPosition()))
-                {
-                    food_in_front[rays_count] = std::make_shared<Food>(food);
-                }
-            }
-        }
-        // for (auto& other_player : players)
-		// {
-        //     if (player == other_player) {
-        //         continue;
-        //     } else if (Math::in_front(player.getPosition(), player.getAngle(), other_player.getPosition())) {
-        //         if (!player_in_front || Math::distance(player.getPosition(), other_player.getPosition()) < Math::distance(player.getPosition(), player_in_front->getPosition())) {
-        //             player_in_front = std::make_shared<Player>(other_player);
-        //         }
-        //     }
-		// }
-        Event::Event event = player.make_turn(food_in_front, player_in_front);
-        switch (event.getType())
-        {
-        case Event::Type::None:
-            {
-                // check if the player is near the food
+                --rays_count;
                 for (auto& food : foods)
                 {
-                    if (Math::distance(player.getPosition(), food.getPosition()) < Constants::Figures::FIGURE_SIZE * 2)
+                    if (Math::in_front(player.getPosition(), angle, food.getPosition()))
                     {
-                        std::cout << "Player " << &player << " (" << player.getGenome().getGenes().size() << ") " << " eats food " << &food << " (" << player.getSatiety() << ")" << std::endl;
-                        player.eat(food);
-                        foods.erase(std::find(foods.begin(), foods.end(), food));
-                        break;
-                    }
-                }
-                // check if the player is near the other player
-                for (auto& other_player : players)
-                {
-                    if (player.getSex() != other_player.getSex() && Math::distance(player.getPosition(), other_player.getPosition()) < Constants::Figures::FIGURE_SIZE * 2 && player.getSatiety() > 100 && other_player.getSatiety() > 100)
-                    {
-                        auto child = player.reproduce(other_player);
-                        new_players.push_back(child);
-                        break;
+                        food_in_front[rays_count] = std::make_shared<Food>(food);
                     }
                 }
             }
-            break;
-        case Event::Type::Eat:
-            {
-                auto object_ptr = event.getObjectPtr();
-                auto weak_ptr = object_ptr.get();
-                Food* food = dynamic_cast<Food*>(weak_ptr);
-                foods.erase(std::find(foods.begin(), foods.end(), *food));
-            }
-            break;
-        case Event::Type::Sex:
-        {
-			auto object_ptr = event.getObjectPtr();
-			auto weak_ptr = object_ptr.get();
-			Player* other_player = dynamic_cast<Player*>(weak_ptr);
-			new_players.push_back(Player(player, *other_player));
-			break;
-        }
-        default:
-            break;
-        }
+            Event::Event event = player.make_turn(food_in_front, player_in_front);
+            shifts[i] = event.getObjectPtr()->getPosition();
+        });
+        ++i;
     }
+    // wait for all threads to finish all the work
+    io_service.run();
     for (auto it = players.begin(); it != players.end();)
     {
         if (it->getHealth() <= 0)
         {
             //foods.push_back(Food({static_cast<float>(rand() % Constants::WIDTH), static_cast<float>(rand() % Constants::HEIGHT)}));
             it = players.erase(it);
+            shifts.erase(shifts.begin() + (it - players.begin()));
+            continue;
             //players.push_back(Player({static_cast<float>(rand() % Constants::WIDTH), static_cast<float>(rand() % Constants::HEIGHT)}));
         }
         else
         {
+            it->shift(shifts[it - players.begin()].x, shifts[it - players.begin()].y);
+            for (auto& food : foods)
+            {
+                if (Math::distance(it->getPosition(), food.getPosition()) < Constants::Figures::FIGURE_SIZE * 2)
+                {
+                    std::cout << "Player " << &it << " (" << it->getGenome().getGenes().size() << ") " << " eats food " << &food << " (" << it->getSatiety() << ")" << std::endl;
+                    it->eat(food);
+                    foods.erase(std::find(foods.begin(), foods.end(), food));
+                    break;
+                }
+            }
+            // check if the player is near the other player
+            for (auto& other_player : players)
+            {
+                if (it->getSex() != other_player.getSex() && Math::distance(it->getPosition(), other_player.getPosition()) < Constants::Figures::FIGURE_SIZE * 2 && it->getSatiety() > 100 && other_player.getSatiety() > 100)
+                {
+                    auto child = it->reproduce(other_player);
+                    std::cout << "new player: " << child.getGenome().getGenes().size() << std::endl;
+                    new_players.push_back(child);
+                    shifts.push_back({0, 0});
+                    break;
+                }
+            }
             ++it;
         }
     }

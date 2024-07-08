@@ -7,7 +7,7 @@ namespace Event
 {
     enum class Type
     {
-        None,
+        Move,
         Eat,
         Damage,
         Sex
