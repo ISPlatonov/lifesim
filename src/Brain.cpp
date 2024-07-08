@@ -67,7 +67,7 @@ void Brain::make_turn(std::vector<Figure>& figures)
                 {
                     if (player.getSex() != other_player.getSex() && Math::distance(player.getPosition(), other_player.getPosition()) < Constants::Figures::FIGURE_SIZE * 2 && player.getSatiety() > 100 && other_player.getSatiety() > 100)
                     {
-                        auto& child = player.reproduce(other_player);
+                        auto child = player.reproduce(other_player);
                         new_players.push_back(child);
                         break;
                     }
