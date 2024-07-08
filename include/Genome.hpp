@@ -98,8 +98,8 @@ public:
     inline void create_new_gene() {
         float bias = 0;
         float value = 1;
-        size_t input = rand() % genes.size();
-        size_t output = rand() % genes.size();
+        size_t input = rand() % (genes.size() - 1);
+        size_t output = (rand() % (genes.size() - input)) + input;
         auto new_gene = Gene(input, output, value, bias);
         if (find(genes.begin(), genes.end(), new_gene) != genes.end() || input == output) {
             return;
