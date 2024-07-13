@@ -8,7 +8,7 @@ namespace Constants
 
     namespace Figures
     {
-        static inline const float FIGURE_SIZE = 20;
+        static inline const float FIGURE_SIZE = 10;
         static inline const double PRECISION = 0.1;
         static inline const double PI = 3.14159265358979323846;
     }

@@ -32,6 +32,7 @@ public:
     inline PlayerSex getSex() const { return sex; }
     inline float getAngle() const { return angle; }
     inline Genome getGenome() const { return genome; }
+    inline bool getReadyToReproduce() const { return days_not_hungry > 500; }
     inline bool operator==(const Player& other) const { return position == other.position && health == other.health && color == other.color && view_radius == other.view_radius && sex == other.sex; }
     void eat(const Food& food);
     Player reproduce(Player& other);
@@ -51,4 +52,6 @@ private:
     float speed;
     PlayerSex sex;
     float angle = 0.f;
+    size_t days_not_hungry = 0;
+    size_t age = 0;
 };

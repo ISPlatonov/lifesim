@@ -3,7 +3,7 @@
 #include <cmath>
 
 
-Figure::Figure(FigureType type, sf::Vector2f position, sf::Color clr) : type(type), position(position), color(clr)
+Figure::Figure(FigureType type, sf::Vector2f position, sf::Color clr) : position(position), type(type), color(clr)
 {
     switch (type)
     {

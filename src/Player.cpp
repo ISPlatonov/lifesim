@@ -17,14 +17,18 @@ Player::Player(const Player& first_parent, const Player& second_parent) : Object
 	view_radius = (first_parent.getViewRadius() / 2.f + second_parent.getViewRadius() / 2.f) + static_cast<float>(rand() % 3 - 1);
     sex = rand() % 2 == 0 ? PlayerSex::Male : PlayerSex::Female;
     health = (first_parent.getHealth() / 2 + second_parent.getHealth() / 2);
-    satiety = (first_parent.getSatiety() / 2 + second_parent.getSatiety() / 2);
     genome = Genome(first_parent.getGenome(), second_parent.getGenome());
+    genome.mutate();
 }
 
 
 Event::Event Player::make_turn(std::vector<std::shared_ptr<Food>> food_in_front, std::shared_ptr<Player> player_in_front)
 {
     satiety <= 0 ? health -= .1f : satiety -= .1f;
+    if (satiety > 500) {
+        ++days_not_hungry;
+    }
+    ++age;
     Event::Event event(Event::Type::Move, std::nullptr_t());
     // @todo: Implement the logic of the player's behavior
     std::vector<float> input(food_in_front.size());
@@ -51,9 +55,9 @@ Event::Event Player::make_turn(std::vector<std::shared_ptr<Food>> food_in_front,
     //         break;
     //     }
     // }
-    if (getSatiety() < 0) {
-        genome.mutate();
-    }
+    // if (getSatiety() > 800) {
+    //     genome.mutate();
+    // }
     return event;
 }
 
@@ -97,9 +101,12 @@ void Player::eat(const Food& food)
 
 Player Player::reproduce(Player& other)
 {
+    // std::cout << "Player " << this << " (" << age << ") reproduces with player " << &other << " (" << other.age << ")" << std::endl;
     auto child = Player(*this, other);
-    satiety -= 100.f;
-    other.satiety -= 100.f;
+    satiety -= 500.f;
+    other.satiety -= 500.f;
+    days_not_hungry = 0;
+    other.days_not_hungry = 0;
     return child;
 }
 
@@ -112,5 +119,5 @@ void Player::shift(float angle, float speed_share)
     this->angle = std::fmod(this->angle, 2.f * Constants::Figures::PI);
     position.x += speed_share * speed * cos(this->angle);
     position.y += speed_share * speed * sin(this->angle);
-    satiety -= speed_share * speed * speed_share * speed * .001f;
+    satiety -= speed_share * speed * speed_share * speed * .1f; // energy ~ speed^2 <= E = m * v^2 / 2
 }

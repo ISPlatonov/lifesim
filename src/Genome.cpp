@@ -27,15 +27,15 @@ Genome::Genome(const Genome& first, const Genome& second) {
     //     }
     // }
     if (rand() % 2 == 0) {
-        genes = first.getGenes();
-        input_nodes = first.getInputNodes();
-        hidden_nodes = first.getHiddenNodes();
-        output_nodes = first.getOutputNodes();
+        this->genes = first.getGenes();
+        this->input_nodes = first.getInputNodes();
+        this->hidden_nodes = first.getHiddenNodes();
+        this->output_nodes = first.getOutputNodes();
     } else {
-        genes = second.getGenes();
-        input_nodes = second.getInputNodes();
-        hidden_nodes = second.getHiddenNodes();
-        output_nodes = second.getOutputNodes();
+        this->genes = second.getGenes();
+        this->input_nodes = second.getInputNodes();
+        this->hidden_nodes = second.getHiddenNodes();
+        this->output_nodes = second.getOutputNodes();
     }
 }
 
@@ -46,7 +46,7 @@ void Genome::mutate() {
         create_new_node();
     } else if (rand_num % 10 == 0) {
         create_new_gene();
-    } else {
+    } else if (genes.size()) {
         size_t gene_index = rand_num % genes.size();
         genes[gene_index].mutate();
     }
@@ -82,17 +82,28 @@ void Genome::create_new_node() {
 
 
 std::vector<float> Genome::getOutput(const std::vector<float>& input) {
-    for (auto& node : input_nodes) {
-        node.setValue(input[node.getValue()]);
+    for (size_t i = 0; i < input_nodes.size(); ++i) {
+        input_nodes[i].setValue(input[i]);
     }
     for (const auto& gene : genes) {
         const auto& input_node_pair = gene.getInput();
-        const size_t input_value = input_node_pair.first == NodeType::Input ? input_nodes[input_node_pair.second].getValue() : hidden_nodes[input_node_pair.second].getValue();
+        size_t input_value;
+        if (input_node_pair.first == NodeType::Input) {
+            input_value = input_nodes[input_node_pair.second].getValue();
+        }
+        else {
+            input_value = hidden_nodes[input_node_pair.second].getValue();
+        }
         auto output_node_pair = gene.getOutput();
         auto value = gene.getValue();
         auto bias = gene.getBias();
         float result = value * input_value + bias;
-        output_node_pair.first == NodeType::Hidden ? hidden_nodes[output_node_pair.second].setValue(result) : output_nodes[output_node_pair.second].setValue(result);
+        if (output_node_pair.first == NodeType::Hidden) {
+            hidden_nodes[output_node_pair.second].setValue(result);
+        }
+        else {
+            output_nodes[output_node_pair.second].setValue(result);
+        }
     }
     std::vector<float> output;
     for (const auto& node : output_nodes) {
