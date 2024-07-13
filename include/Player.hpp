@@ -8,6 +8,7 @@
 #include "Event.hpp"
 #include "Genome.hpp"
 #include <vector>
+#include <memory>
 
 
 enum class PlayerSex
